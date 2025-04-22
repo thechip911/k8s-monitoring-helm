@@ -3,7 +3,7 @@
 cluster:
   # -- The name for this cluster.
   # @section -- Cluster
-  name: "payme-infra-hyd-eks-cluster-v40"
+  name: "payme-infra-hyd-eks-cluster-v41"
 
 #
 # Global settings
@@ -86,17 +86,17 @@ clusterMetrics:
   # @ignored
   collector: alloy-metrics
 
-  # Node Exporter configuration with custom ports to avoid conflicts
+  # Node Exporter configuration
   node-exporter:
-    # Keep Node Exporter enabled but change its ports
-    deploy: true
+    # Disable Node Exporter deployment
+    deploy: false
     # Configure custom ports to avoid conflicts with AWS EKS addon Node Exporter
     prometheus-node-exporter:
       service:
-        port: 9101  # Changed from default 9100 to avoid conflicts
+        port: 9101
       ports:
         metrics:
-          port: 9101  # Changed from default 9100 to avoid conflicts
+          port: 9101
 
   # To see additional options, please see the [Cluster Monitoring feature documentation](https://github.com/grafana/k8s-monitoring-helm/tree/main/charts/k8s-monitoring/charts/feature-cluster-metrics).
 
@@ -108,7 +108,7 @@ clusterMetrics:
 clusterEvents:
   # -- Enable gathering Kubernetes Cluster events.
   # @section -- Features - Cluster Events
-  enabled: true
+  enabled: false
 
   # -- The destinations where cluster events will be sent. If empty, all logs-capable destinations will be used.
   # @section -- Features - Cluster Events
@@ -350,7 +350,7 @@ alloy-metrics:
       # -- The key for storing the username in the secret.
       # @section -- Collectors - Alloy Metrics
       usernameKey: "username"
-      # -- Raw config for accessing the password.
+      # -- Raw config for accessing the username.
       # @section -- Collectors - Alloy Metrics
       usernameFrom: ""
 
@@ -406,7 +406,7 @@ alloy-metrics:
     # Add required environment variables
     extraEnv:
       - name: GCLOUD_FM_COLLECTOR_ID
-        value: "not-using-gcloud"
+        value: "not-using-gcp"
 
     # Enable clustering to ensure that scraping is distributed across all instances.
     # @ignored
@@ -662,7 +662,7 @@ alloy-logs:
     # This chart is creating the configuration, so the alloy chart does not need to.
     configMap: {create: false}
 
-    # Disabling clustering by default, because the default log gathering format does not require clusters.
+    # Disabling clustering because the Node Logs feature requires it to be disabled.
     clustering: {enabled: false}
 
     # @ignored
@@ -986,10 +986,6 @@ alloy-profiles:
 
 # -- Deploy additional manifest objects
 extraObjects: []
-
-
-
-
 # - apiVersion: external-secrets.io/v1beta1
 #   kind: ExternalSecret
 #   metadata:
