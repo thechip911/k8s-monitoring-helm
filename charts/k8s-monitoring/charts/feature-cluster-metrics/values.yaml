@@ -719,6 +719,10 @@ node-exporter:
     # @section -- Node Exporter
     portName: metrics
 
+    # -- The port used by Node Exporter.
+    # @section -- Node Exporter
+    port: 9200  # Changed from default 9100 to avoid conflicts
+
     # Disable the prometheus.io/scrape annotation
     # @ignored
     annotations:
@@ -760,6 +764,10 @@ node-exporter:
   # @ignored
   podAnnotations:
     k8s.grafana.com/logs.job: integrations/node_exporter
+
+  # -- Node Exporter container port configuration
+  containerPort:
+    port: 9200  # Changed from default 9100 to avoid conflicts
 
 # Windows Exporter metrics gathers hardware information about Windows nodes.
 windows-exporter:
