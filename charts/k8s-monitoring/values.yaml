@@ -3,7 +3,7 @@
 cluster:
   # -- The name for this cluster.
   # @section -- Cluster
-  name: ""
+  name: "payme-infra-hyd-eks-cluster-v41"
 
 #
 # Global settings
@@ -42,7 +42,26 @@ global:
 # -- The list of destinations where telemetry data will be sent.
 # See the [destinations documentation](https://github.com/grafana/k8s-monitoring-helm/blob/main/charts/k8s-monitoring/docs/destinations/README.md) for more information.
 # @section -- Destinations
-destinations: []
+destinations:
+  - type: prometheus
+    name: kube-prometheus-stack
+    url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+    default: true
+  - type: loki
+    name: loki
+    url: http://loki-gateway.monitoring.svc.cluster.local
+    default: true
+    basicAuth:
+      username: ""
+      password: ""
+  - type: otlp
+    name: tempo
+    url: http://tempo.monitoring.svc.cluster.local:4317
+    default: true
+  - type: pyroscope
+    name: pyroscope
+    url: http://pyroscope.monitoring.svc.cluster.local:4040
+    default: true
 
 #
 # Features
@@ -56,7 +75,7 @@ destinations: []
 clusterMetrics:
   # -- Enable gathering Kubernetes Cluster metrics.
   # @section -- Features - Cluster Metrics
-  enabled: false
+  enabled: true
 
   # -- The destinations where cluster metrics will be sent. If empty, all metrics-capable destinations will be used.
   # @section -- Features - Cluster Metrics
@@ -66,6 +85,18 @@ clusterMetrics:
   # @section -- Features - Cluster Metrics
   # @ignored
   collector: alloy-metrics
+
+  # Node Exporter configuration
+  node-exporter:
+    # Disable Node Exporter deployment
+    deploy: false
+    # Configure custom ports to avoid conflicts with AWS EKS addon Node Exporter
+    prometheus-node-exporter:
+      service:
+        port: 9101
+      ports:
+        metrics:
+          port: 9101
 
   # To see additional options, please see the [Cluster Monitoring feature documentation](https://github.com/grafana/k8s-monitoring-helm/tree/main/charts/k8s-monitoring/charts/feature-cluster-metrics).
 
@@ -77,7 +108,7 @@ clusterMetrics:
 clusterEvents:
   # -- Enable gathering Kubernetes Cluster events.
   # @section -- Features - Cluster Events
-  enabled: false
+  enabled: true
 
   # -- The destinations where cluster events will be sent. If empty, all logs-capable destinations will be used.
   # @section -- Features - Cluster Events
@@ -98,7 +129,7 @@ clusterEvents:
 nodeLogs:
   # -- Enable gathering Kubernetes Cluster Node logs.
   # @section -- Features - Node Logs
-  enabled: false
+  enabled: true
 
   # -- The destinations where logs will be sent. If empty, all logs-capable destinations will be used.
   # @section -- Features - Node Logs
@@ -119,7 +150,7 @@ nodeLogs:
 podLogs:
   # -- Enable gathering Kubernetes Pod logs.
   # @section -- Features - Pod Logs
-  enabled: false
+  enabled: true
 
   # -- The destinations where logs will be sent. If empty, all logs-capable destinations will be used.
   # @section -- Features - Pod Logs
@@ -140,7 +171,7 @@ podLogs:
 applicationObservability:
   # -- Enable receiving Application Observability.
   # @section -- Features - Application Observability
-  enabled: false
+  enabled: true
 
   # -- The destinations where application data will be sent. If empty, all capable destinations will be used.
   # @section -- Features - Application Observability
@@ -148,7 +179,10 @@ applicationObservability:
 
   # -- The receivers used for receiving application data.
   # @section -- Features - Application Observability
-  receivers: {}
+  receivers:
+    otlp:
+      grpc:
+        enabled: true
 
   # -- Which collector to assign this feature to. Do not change this unless you are sure of what you are doing.
   # @section -- Features - Application Observability
@@ -165,7 +199,7 @@ applicationObservability:
 autoInstrumentation:
   # -- Enable automatic instrumentation for applications.
   # @section -- Features - Auto-Instrumentation
-  enabled: false
+  enabled: true
 
   # -- The destinations where application data will be sent. If empty, all capable destinations will be used.
   # @section -- Features - Auto-Instrumentation
@@ -186,7 +220,7 @@ autoInstrumentation:
 annotationAutodiscovery:
   # -- Enable gathering metrics from Kubernetes Pods and Services discovered by special annotations.
   # @section -- Features - Annotation Autodiscovery
-  enabled: false
+  enabled: true
 
   # -- The destinations where cluster metrics will be sent. If empty, all metrics-capable destinations will be used.
   # @section -- Features - Annotation Autodiscovery
@@ -207,7 +241,7 @@ annotationAutodiscovery:
 prometheusOperatorObjects:
   # -- Enable gathering metrics from Prometheus Operator Objects.
   # @section -- Features - Prometheus Operator Objects
-  enabled: false
+  enabled: true
 
   # -- The destinations where metrics will be sent. If empty, all metrics-capable destinations will be used.
   # @section -- Features - Prometheus Operator Objects
@@ -228,7 +262,7 @@ prometheusOperatorObjects:
 profiling:
   # -- Enable gathering profiles from applications.
   # @section -- Features - Profiling
-  enabled: false
+  enabled: true
 
   # -- The destinations where profiles will be sent. If empty, all profiles-capable destinations will be used.
   # @section -- Features - Profiling
@@ -285,7 +319,7 @@ selfReporting:
 alloy-metrics:
   # -- Deploy the Alloy instance for collecting metrics.
   # @section -- Collectors - Alloy Metrics
-  enabled: false
+  enabled: true
 
   # -- Extra Alloy configuration to be added to the configuration file.
   # @section -- Collectors - Alloy Metrics
@@ -316,7 +350,7 @@ alloy-metrics:
       # -- The key for storing the username in the secret.
       # @section -- Collectors - Alloy Metrics
       usernameKey: "username"
-      # -- Raw config for accessing the password.
+      # -- Raw config for accessing the username.
       # @section -- Collectors - Alloy Metrics
       usernameFrom: ""
 
@@ -363,11 +397,16 @@ alloy-metrics:
   liveDebugging:
     # -- Enable live debugging for the Alloy instance.
     # @section -- Collectors - Alloy Metrics
-    enabled: false
+    enabled: true
 
   # @ignored
   alloy:
     configMap: {create: false}
+
+    # Add required environment variables
+    extraEnv:
+      - name: GCLOUD_FM_COLLECTOR_ID
+        value: "not-using-gcp"
 
     # Enable clustering to ensure that scraping is distributed across all instances.
     # @ignored
@@ -414,7 +453,7 @@ alloy-metrics:
 alloy-singleton:
   # -- Deploy the Alloy instance for data sources required to be deployed on a single replica.
   # @section -- Collectors - Alloy Singleton
-  enabled: false
+  enabled: true
 
   # -- Extra Alloy configuration to be added to the configuration file.
   # @section -- Collectors - Alloy Singleton
@@ -492,7 +531,7 @@ alloy-singleton:
   liveDebugging:
     # -- Enable live debugging for the Alloy instance.
     # @section -- Collectors - Alloy Singleton
-    enabled: false
+    enabled: true
 
   # @ignored
   alloy:
@@ -538,7 +577,7 @@ alloy-singleton:
 alloy-logs:
   # -- Deploy the Alloy instance for collecting log data.
   # @section -- Collectors - Alloy Logs
-  enabled: false
+  enabled: true
 
   # -- Extra Alloy configuration to be added to the configuration file.
   # @section -- Collectors - Alloy Logs
@@ -616,14 +655,14 @@ alloy-logs:
   liveDebugging:
     # -- Enable live debugging for the Alloy instance.
     # @section -- Collectors - Alloy Logs
-    enabled: false
+    enabled: true
 
   # @ignored
   alloy:
     # This chart is creating the configuration, so the alloy chart does not need to.
     configMap: {create: false}
 
-    # Disabling clustering by default, because the default log gathering format does not require clusters.
+    # Disabling clustering because the Node Logs feature requires it to be disabled.
     clustering: {enabled: false}
 
     # @ignored
@@ -676,7 +715,7 @@ alloy-logs:
 alloy-receiver:
   # -- Deploy the Alloy instance for opening receivers to collect application data.
   # @section -- Collectors - Alloy Receiver
-  enabled: false
+  enabled: true
 
   # -- Extra Alloy configuration to be added to the configuration file.
   # @section -- Collectors - Alloy Receiver
@@ -754,12 +793,16 @@ alloy-receiver:
   liveDebugging:
     # -- Enable live debugging for the Alloy instance.
     # @section -- Collectors - Alloy Receiver
-    enabled: false
+    enabled: true
 
   alloy:
     # -- The ports to expose for the Alloy receiver.
     # @section -- Collectors - Alloy Receiver
-    extraPorts: []
+    extraPorts:
+      - name: otlp-grpc
+        port: 4317
+        targetPort: 4317
+        protocol: TCP
 
     # This chart is creating the configuration, so the alloy chart does not need to.
     # @ignored
@@ -800,7 +843,7 @@ alloy-receiver:
     # -- Create an extra service for the Alloy receiver. This service will mirror the alloy-receiver service, but its
     # name can be customized to match existing application settings.
     # @section -- Collectors - Alloy Receiver
-    enabled: false
+    enabled: true
     # -- The name of the extra service to create. This will result in the format `<release-name>-<name>`.
     # @section -- Collectors - Alloy Receiver
     name: alloy
@@ -813,7 +856,7 @@ alloy-receiver:
 alloy-profiles:
   # -- Deploy the Alloy instance for gathering profiles.
   # @section -- Collectors - Alloy Profiles
-  enabled: false
+  enabled: true
 
   # -- Extra Alloy configuration to be added to the configuration file.
   # @section -- Collectors - Alloy Profiles
@@ -891,7 +934,7 @@ alloy-profiles:
   liveDebugging:
     # -- Enable live debugging for the Alloy instance.
     # @section -- Collectors - Alloy Profiles
-    enabled: false
+    enabled: true
 
   # @ignored
   alloy:
@@ -904,7 +947,7 @@ alloy-profiles:
     # Disabling clustering because each instance will gather profiles for the workloads on the same node.
     clustering:
       name: alloy-profiles
-      enabled: false
+      enabled: true
 
     securityContext:
       privileged: true
