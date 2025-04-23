@@ -43,7 +43,7 @@ resource "kubernetes_namespace" "k8s_monitoring" {
 
 # Install k8s-monitoring chart using Helm
 resource "helm_release" "k8s_monitoring" {
-  name       = "k8s-monitoring-tf"  # Use a unique name to avoid conflicts
+  name       = "k8s-monitoring"  # Use a unique name to avoid conflicts
   chart      = "${path.module}"
   namespace  = var.namespace  # Use the namespace variable directly since we know it exists
   timeout    = 600
@@ -84,7 +84,7 @@ resource "helm_release" "k8s_monitoring" {
     value = "true"
   }
   
-  # Configure persistence using EFS storage class
+  # Configure persistence using gp2 storage class for better compatibility
   set {
     name  = "prometheusAgent.persistentVolume.enabled"
     value = "true"
@@ -92,7 +92,7 @@ resource "helm_release" "k8s_monitoring" {
   
   set {
     name  = "prometheusAgent.persistentVolume.storageClass"
-    value = "efs-sc"
+    value = "gp2"
   }
   
   set {
