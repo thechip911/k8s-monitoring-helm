@@ -17,6 +17,12 @@ variable "tags" {
   default     = {}
 }
 
+variable "skip_installation" {
+  description = "Skip installation if the Helm release already exists"
+  type        = bool
+  default     = false
+}
+
 # Check if namespace already exists
 data "kubernetes_namespace_v1" "k8s_monitoring" {
   metadata {
@@ -50,12 +56,12 @@ resource "helm_release" "k8s_monitoring" {
   wait       = true
   atomic     = true
   max_history = 5
-  force_update = true  # Force update to handle existing releases
-  replace     = true  # Replace the release if it exists
-  recreate_pods = true  # Recreate pods for StatefulSets to apply changes
+  force_update = false  # Don't force update to prevent recreation
+  replace     = false  # Don't replace existing releases
+  recreate_pods = false  # Don't recreate pods to maintain StatefulSet naming
   
   # Skip creating this resource if it already exists
-  count = 1
+  count = var.skip_installation ? 0 : 1
   
   # Add lifecycle block to prevent destroy operations
   lifecycle {
@@ -116,5 +122,5 @@ output "namespace" {
 # Output the release name for reference
 output "release_name" {
   description = "The name of the Helm release"
-  value       = helm_release.k8s_monitoring[0].name
+  value       = length(helm_release.k8s_monitoring) > 0 ? helm_release.k8s_monitoring[0].name : "k8s-monitoring"
 }
